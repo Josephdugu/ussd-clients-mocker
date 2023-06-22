@@ -5,10 +5,12 @@
  * Database 
  */
 
+ require('const.php');
+
 /**
  * Connection to DB
 */
-function connect_db ($data = ['host'=>'localhost', 'user'=>'root', 'password'=>'', 'database'=>'ussd_sessions']) {
+function connect_db ($data = ['host'=>DB_HOST, 'user'=>DB_USER, 'password'=>DB_PASSWORD, 'database'=>DB_NAME]) {
     return $conn = mysqli_connect(
         $data['host'], $data['user'], $data['password'], $data['database']
     );
@@ -30,22 +32,22 @@ function save_session ($sessionID, $msisdn, $network, $input = 0, $newSession = 
         if ($newSession) {
             // create a new session record
             // For initial save, let user data be 0, indicating that no option/input has been reeived from the user yet
-            $query = "INSERT INTO `ark_client_sessions` (session_id, msisdn, network, ussd_code, u_data)
+            $query = "INSERT INTO ". U_SESSIONS ." (session_id, msisdn, network, ussd_code, u_data)
                         VALUES('$sessionID', '$msisdn', '$network', '$ussd_code', '$input')";
             return mysqli_query($conn, $query);
         } else {
             // sansitize input
             $input = str_replace([' ','*'], '', $input);
             // Fetch the existing record for the value of previous data 
-            $previous_data = mysqli_query($conn, "SELECT * FROM `ark_client_sessions` WHERE session_id = '$sessionID' AND msisdn = '$msisdn' ORDER BY created_at DESC LIMIT 1");
+            $previous_data = mysqli_query($conn, "SELECT * FROM ". U_SESSIONS ." WHERE session_id = '$sessionID' AND msisdn = '$msisdn' ORDER BY created_at DESC LIMIT 1");
             $previous_data->data_seek(0);
             $previous_data = $previous_data->fetch_array(MYSQLI_ASSOC);
             // If input is 0, then replace everything in DB to indicate that the user is starting from initial prompt again, else add *input to the existing data
             $data = $input == 0 ? 0 : $previous_data['u_data']."*".$input;
             $id = $previous_data['id'];
             var_dump($data);
-            $query = "UPDATE `ark_client_sessions` SET u_data = '$data' WHERE id = '$id' AND msisdn = '$msisdn'";
-            // $query = "UPDATE `ark_client_sessions` SET u_data = '$data' WHERE session_id = '$sessionID' AND msisdn = '$msisdn'";
+            $query = "UPDATE ". U_SESSIONS ." SET u_data = '$data' WHERE id = '$id' AND msisdn = '$msisdn'";
+            // $query = "UPDATE ". U_SESSIONS ." SET u_data = '$data' WHERE session_id = '$sessionID' AND msisdn = '$msisdn'";
             return mysqli_query($conn, $query);
         }
 
@@ -64,7 +66,7 @@ function save_session ($sessionID, $msisdn, $network, $input = 0, $newSession = 
  */
 function get_session ($sessionID, $msisdn):array {
     $conn = connect_db();
-    $result = mysqli_query($conn, "SELECT u_data FROM `ark_client_sessions` WHERE session_id = '$sessionID' AND msisdn = '$msisdn' ORDER BY created_at DESC LIMIT 1");
+    $result = mysqli_query($conn, "SELECT u_data FROM ". U_SESSIONS ." WHERE session_id = '$sessionID' AND msisdn = '$msisdn' ORDER BY created_at DESC LIMIT 1");
     $result->data_seek(0);
     return $result->fetch_array(MYSQLI_ASSOC);
 }
