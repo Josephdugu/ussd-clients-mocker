@@ -118,12 +118,13 @@ if ($newSession) {
         }
 
     } catch (Exception $e) {
+        var_dump($e->getMessage());
         $message = "An error occured from the application!\n";
         $message .= "Please try again later";
     }    
 }
 
-
+// Data to return
 $response = [
     'sessionID' => $sessionID,
     'userID' => $userId,
